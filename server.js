@@ -1,5 +1,5 @@
 import express from "express";
-import db from './banco.js';
+import { inserirProduto, buscarProdutos } from './banco.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -8,32 +8,23 @@ const app = express();
 app.use(express.json());
 
 // Rota GET - Listar produtos
-app.get('/produtos', (req, res) => {
+app.get('/produtos', async (req, res) => {
   try {
-    const produtos = db.prepare('SELECT * FROM produtos').all();
+    const produtos = await buscarProdutos();
     res.json(produtos);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
 // Rota POST - Criar produto
-app.post('/produtos', (req, res) => {
-  const { nome, preco } = req.body;
-  
-  if (!nome || preco === undefined) {
-    return res.status(400).json({ error: 'Nome e preço são obrigatórios' });
-  }
-  
+app.post('/produtos', async (req, res) => {
   try {
-    const result = db.prepare('INSERT INTO produtos (nome, preco) VALUES (?, ?)').run(nome, preco);
-    res.status(201).json({ 
-      id: result.lastInsertRowid, 
-      nome, 
-      preco 
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { nome, preco } = req.body;
+    const produto = await inserirProduto(nome, preco);
+    res.status(201).json(produto);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
